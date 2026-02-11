@@ -79,12 +79,28 @@ function authentifier($courriel, $mdp)
 
 function deconnexion()
 {
+
+    // Supprimer le cookie autologin
+    setcookie("autologin", "", time() - 3600);
+
+    $_SESSION = array();
     session_destroy();
+
     // Charger l'accueil et afficher la liste des produits
     require('controller/controllerAccueil.php');
     listProduits();
 }
 
+
+function fermer_session()
+{
+    $_SESSION = array();
+    session_destroy();
+
+    // Charger l'accueil et afficher la liste des produits
+    require('controller/controllerAccueil.php');
+    listProduits();
+}
 
 function authentificationGoogle($credential)
 {

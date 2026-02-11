@@ -18,24 +18,13 @@
 echo '</pre>----------------------------<br>';
 ?>
 
-
-    <?php
-    if (isset($_REQUEST['action'])) {
-        if ($_REQUEST['action'] == 'deconnexion') {
-            session_destroy();
-            header('Location: index.php');
-            exit;
-        }
-    }
-    ?>
-
     <?php if (isset($_SESSION['courriel'])) { ?>
         <div>
-            <p>Bienvenue <?= htmlspecialchars($_SESSION['courriel']) ?> <a href="?action=deconnexion">Se déconnecter</a></p>
+            <p>Bienvenue <?= htmlspecialchars($_SESSION['courriel']) ?> <a href="index.php?action=deconnexion">Se déconnecter</a></p>
         </div>
     <?php } else { ?>
         <div>
-            <a href="?action=connexion">Se connecter</a>
+            <a href="index.php?action=connexion">Se connecter</a>
         </div>
     <?php } ?>
 
@@ -44,10 +33,11 @@ echo '</pre>----------------------------<br>';
             <li><a href=".">Accueil</a></li>
             <li><a href="index.php?action=produits">Les produits</a></li>
             <li><a href="index.php?action=categories">Les catégories</a></li>
+            <li><a href="index.php?action=sessionFermer">Fermer la session<a></li>
             <?php if (isset($_SESSION['courriel'])) { ?>
-                <li><a href="?action=deconnexion">Se déconnecter</a></li>
+                <li><a href="index.php?action=deconnexion">Se déconnecter</a></li>
             <?php } else { ?>
-                <li><a href="?action=connexion">Se connecter</a></li>
+                <li><a href="index.php?action=connexion">Se connecter</a></li>
             <?php } ?>
 
         </ul>

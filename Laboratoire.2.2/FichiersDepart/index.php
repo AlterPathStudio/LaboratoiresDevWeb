@@ -75,6 +75,11 @@ if (isset($_REQUEST['action'])) {
         require_once('controller/controllerUtilisateur.php');
         authentificationGoogle($_REQUEST['credential']);
     }
+    elseif ($_REQUEST['action'] == 'sessionFermer'){
+        require_once('controller/controllerUtilisateur.php');
+        fermer_session();
+
+    }
 }
 // Si pas de paramètre charge l'accueil
 else {
