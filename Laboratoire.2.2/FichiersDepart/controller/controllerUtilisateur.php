@@ -1,11 +1,36 @@
 <?php
 require('model/UtilisateurManager.php');
+require('Util.php');
+
 
 
 
 function getFormConnexion()
 {
     require_once('view/loginView.php');
+}
+
+function autoLogin(){
+    // Vérifier si le cookie autologin existe
+    if (isset($_COOKIE['autologin'])) {
+        // Décoder le JSON du cookie
+        $cookieValues = json_decode($_COOKIE['autologin'], true);
+        
+        if ($cookieValues && isset($cookieValues['courriel']) && isset($cookieValues['token'])) {
+            $courriel = $cookieValues['courriel'];
+            $tokenClair = $cookieValues['token'];
+            
+            // Vérifier les informations du cookie avec la BD
+            $utilisateurManager = new UtilisateurManager();
+            $utilisateur = $utilisateurManager->verifyAutologin($courriel, $tokenClair);
+            
+            if ($utilisateur !== null) {
+                // Autologin valide - réactiver la session
+                $_SESSION['courriel'] = $utilisateur->getCourriel();
+                $_SESSION['role'] = $utilisateur->getRoleUtilisateur();
+            }
+        }
+    }
 }
 
 
@@ -19,6 +44,28 @@ function authentifier($courriel, $mdp)
         // Ajouter les informations dans $_SESSION
         $_SESSION['courriel'] = $utilisateur->getCourriel();
         $_SESSION['role'] = $utilisateur->getRoleUtilisateur();
+
+        // Vérifier si l'utilisateur a coché "Se souvenir de moi"
+        if (isset($_POST['souvenirMoi'])) {
+            // Générer un token aléatoire entre 16 et 32 caractères
+            $util = new Util();
+            $tokenClair = $util->getToken(32); // Token de 32 caractères en texte clair
+            
+            // Hacher le token pour l'enregistrer en BD
+            $tokenHash = password_hash($tokenClair, PASSWORD_DEFAULT);
+            
+            // Créer le cookie avec le token en clair et le courriel
+            $expirationCookie = time() + (30 * 24 * 60 * 60); // 30 jours en secondes
+            $cookieValues = array(
+                'courriel' => $utilisateur->getCourriel(),
+                'token' => $tokenClair
+            );
+            // Enregistrer le cookie en
+            setcookie('autologin', json_encode($cookieValues), $expirationCookie);
+            
+            // Ajouter l'enregistrement autologin avec le token hachée
+            $utilisateurManager->addAutologin($utilisateur->getId(), $tokenHash);
+        }
 
         // Charger l'accueil et afficher la liste des produits
         require('controller/controllerAccueil.php');
@@ -42,7 +89,7 @@ function deconnexion()
 function authentificationGoogle($credential)
 {
     // Inclut la bibliothèque Google Client
-    require_once 'vendor/autoload.php';
+    require_once 'inc/vendor/autoload.php';
 
     // ID Google
     $CLIENT_ID = "968412325146-5ipedunslal15l7q1tfl4itr21mohi3h.apps.googleusercontent.com";
@@ -101,33 +148,8 @@ function authentificationGoogle($credential)
 
 function addUtilisateur($infosUtilisateur)
 {
-    $pdo = new PDO('mysql:host=localhost;dbname=dwalabo;charset=utf8', 'root', '');
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    $stmt = $pdo->prepare("
-        INSERT INTO tbl_utilisateur
-        (nom, prenom, courriel, mdp, est_actif, role_utilisateur, type_utilisateur, token)
-        VALUES
-        (:nom, :prenom, :courriel, :mdp, :est_actif, :role_utilisateur, :type_utilisateur, :token)
-    ");
-
-    // Pour Google, mdp = vide ou un hash aléatoire
-    $mdp = password_hash(bin2hex(random_bytes(8)), PASSWORD_DEFAULT);
-
-    $stmt->execute([
-        'nom' => $infosUtilisateur['nom'],
-        'prenom' => $infosUtilisateur['prenom'],
-        'courriel' => $infosUtilisateur['courriel'],
-        'mdp' => $mdp,
-        'est_actif' => $infosUtilisateur['est_actif'],
-        'role_utilisateur' => $infosUtilisateur['role'],
-        'type_utilisateur' => $infosUtilisateur['type'],
-        'token' => ''
-    ]);
-
-    // Retourne l'utilisateur créé (via le manager)
-    $um = new UtilisateurManager();
-    return $um->getUtilisateurParCourriel($infosUtilisateur['courriel']);
+   $utilisateurManager = new UtilisateurManager();
+    $utilisateur = $utilisateurManager->addUtilisateur($infosUtilisateur);
 }
 
 

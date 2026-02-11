@@ -10,6 +10,13 @@
 </head>
 
 <body>
+    <?php
+    echo '</pre>
+          $_COOKIE :<br>
+          <pre>';
+    print_r($_COOKIE);
+echo '</pre>----------------------------<br>';
+?>
 
 
     <?php

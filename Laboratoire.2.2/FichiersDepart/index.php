@@ -2,6 +2,10 @@
 // Démarrage de la session au début du routeur
 session_start();
 
+// Vérifier et restaurer la session avec le cookie autologin
+require_once('controller/controllerUtilisateur.php');
+autoLogin();
+
 
 
 //Débogage afficher ce qui est reçu en paramètres
@@ -48,13 +52,13 @@ if (isset($_REQUEST['action'])) {
     }
     // Si l'action demandé est le clic sur le bouton Connexion
     elseif ($_REQUEST['action'] == 'connexion') {
-        require('controller/controllerUtilisateur.php');
+        require_once('controller/controllerUtilisateur.php');
         getFormConnexion();
     }
     // Si l'action demandé est le clic sur le bouton Authentifier du formulaire de connexion
     elseif ($_REQUEST['action'] == 'authentifier') {
         if (isset($_REQUEST['courriel']) && isset($_REQUEST['motPasse'])) {
-            require('controller/controllerUtilisateur.php');
+            require_once('controller/controllerUtilisateur.php');
             authentifier($_REQUEST['courriel'], $_REQUEST['motPasse']);
         } else {
             echo "Erreur, mot de passe ou courriel pas bon";
@@ -63,12 +67,12 @@ if (isset($_REQUEST['action'])) {
     }
     // Si l'action demandé est le clic sur le bouton deconnexion
     elseif ($_REQUEST['action'] == 'deconnexion') {
-        require('controller/controllerUtilisateur.php');
+        require_once('controller/controllerUtilisateur.php');
         deconnexion();
     }
     // Si l'action demandé est la connexion Google
     elseif ($_REQUEST['action'] == 'authGoogle' && isset($_REQUEST['credential'])) {
-        require('controller/controllerUtilisateur.php');
+        require_once('controller/controllerUtilisateur.php');
         authentificationGoogle($_REQUEST['credential']);
     }
 }

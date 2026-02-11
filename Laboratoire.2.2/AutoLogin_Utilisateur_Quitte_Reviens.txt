@@ -1,0 +1,37 @@
+# Étapes - Implémentation Autologin Automatique
+
+## Étape 1: Ajout de la méthode verifyAutologin() dans UtilisateurManager.php
+- Nouvelle méthode qui valide le contenu du cookie avec la base de données
+- Elle reçoit le courriel et le token en clair du cookie
+- Elle cherche l'enregistrement autologin le plus récent pour cet utilisateur
+- Elle vérifie que l'enregistrement est:
+  - Valide (`est_valide = 1`)
+  - Non expiré (`date_expiration >= CURDATE()`)
+- Elle compare le token en clair du cookie avec le token hachée en BD avec `password_verify()`
+- Elle retourne l'utilisateur si tout est valide, sinon `null`
+
+## Étape 2: Implémentation de autoLogin() dans controllerUtilisateur.php
+- Fonction qui traite la reconnexion automatique
+- Elle vérifie si le cookie `autologin` existe
+- Elle décodes le JSON du cookie pour extraire:
+  - Le courriel de l'utilisateur
+  - Le token en texte clair
+- Elle appelle `verifyAutologin()` pour valider ces informations
+- Si valide, elle réactive la session PHP:
+  - `$_SESSION['courriel']` = courriel de l'utilisateur
+  - `$_SESSION['role']` = rôle de l'utilisateur
+
+## Étape 3: Appel à autoLogin() dans index.php
+- Import du controller `controllerUtilisateur.php`
+- Appel de `autoLogin()` immédiatement après `session_start()`
+- Cet appel se fait automatiquement à chaque chargement de page
+- Permet de restaurer la session si un cookie valide existe
+
+## Résumé du flux d'autologin:
+1. Utilisateur quitte le site (session détruite)
+2. Cookie `autologin` reste sur son navigateur
+3. Utilisateur revient sur le site
+4. `index.php` appelle `autoLogin()` automatiquement
+5. Cookie est vérifié contre la base de données
+6. Si valide et non expiré → session réactivée
+7. Utilisateur est reconnu automatiquement
