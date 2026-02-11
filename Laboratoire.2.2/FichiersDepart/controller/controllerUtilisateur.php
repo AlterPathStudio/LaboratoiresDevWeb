@@ -9,10 +9,10 @@ function getFormConnexion()
 }
 
 
-function authentifier($courriel, $motPasse)
+function authentifier($courriel, $mdp)
 {
     $utilisateurManager = new UtilisateurManager();
-    $utilisateur = $utilisateurManager->verifAuthentification($courriel, $motPasse);
+    $utilisateur = $utilisateurManager->verifAuthentification($courriel, $mdp);
 
     if ($utilisateur !== null) {
         // Authentification réussie
@@ -20,9 +20,9 @@ function authentifier($courriel, $motPasse)
         $_SESSION['courriel'] = $utilisateur->getCourriel();
         $_SESSION['role'] = $utilisateur->getRoleUtilisateur();
 
-        // Redirection vers la page d'accueil
-        header('Location: ./');
-        exit();
+        // Charger l'accueil et afficher la liste des produits
+        require('controller/controllerAccueil.php');
+        listProduits();
     } else {
         // Authentification échouée
         // Afficher le formulaire de connexion
