@@ -3,24 +3,26 @@ require('model/UtilisateurManager.php');
 
 
 
-function getFormConnexion(){
+function getFormConnexion()
+{
     require_once('view/loginView.php');
 }
 
 
-function authentifier($courriel, $motPasse){
+function authentifier($courriel, $motPasse)
+{
     $utilisateurManager = new UtilisateurManager();
     $utilisateur = $utilisateurManager->verifAuthentification($courriel, $motPasse);
-    
+
     if ($utilisateur !== null) {
         // Authentification réussie
         // Ajouter les informations dans $_SESSION
         $_SESSION['courriel'] = $utilisateur->getCourriel();
-        $_SESSION['motPasse'] = $utilisateur->getMdp();
         $_SESSION['role'] = $utilisateur->getRoleUtilisateur();
-        
+
         // Redirection vers la page d'accueil
         header('Location: ./');
+        exit();
     } else {
         // Authentification échouée
         // Afficher le formulaire de connexion
@@ -28,15 +30,17 @@ function authentifier($courriel, $motPasse){
     }
 }
 
-function deconnexion(){
+function deconnexion()
+{
     session_destroy();
     // Charger l'accueil et afficher la liste des produits
     require('controller/controllerAccueil.php');
     listProduits();
 }
 
-<?php
-function authentificationGoogle($credential) {
+
+function authentificationGoogle($credential)
+{
     // Inclut la bibliothèque Google Client
     require_once 'vendor/autoload.php';
 
@@ -63,12 +67,14 @@ function authentificationGoogle($credential) {
 
     $courriel = $payload['email'];
 
-    // Appelle la méthode pour vérifier si l'utilisateur existe déjà
-    $utilisateur = getUtilisateurParCourriel($courriel);
+    // Utiliser le manager pour vérifier si l'utilisateur existe déjà
+    $um = new UtilisateurManager();
+    $utilisateur = $um->getUtilisateurParCourriel($courriel);
 
     if ($utilisateur) {
-        // L'utilisateur existe déjà, la session commence
-        $_SESSION['user'] = $utilisateur;
+        $_SESSION['courriel'] = $utilisateur->getCourriel();
+        $_SESSION['mdp'] = $utilisateur->getMdp();
+        $_SESSION['role'] = $utilisateur->getRoleUtilisateur();
         echo "Utilisateur existant connecté : " . $courriel;
     } else {
         // Si nouvel utilisateur, on les met dans la bd
@@ -76,21 +82,25 @@ function authentificationGoogle($credential) {
             'prenom' => $payload['given_name'],  // prénom
             'nom' => $payload['family_name'],    // nom
             'courriel' => $courriel,             // email
-            'actif' => 1,                         // actif
-            'role' => 0,                           // rôle normal
-            'type' => 1                            // type Google
+            'est_actif' => 1,                    // actif
+            'role' => 0,                         // rôle normal
+            'type' => 1                          // type Google
         ];
 
         // Ajoute l'utilisateur à la BD
         $nouvelUtilisateur = addUtilisateur($infosUtilisateur);
 
         // Démarre la session pour le nouvel utilisateur
-        $_SESSION['user'] = $nouvelUtilisateur;
+        if ($nouvelUtilisateur) {
+            $_SESSION['courriel'] = $nouvelUtilisateur->getCourriel();
+            $_SESSION['role'] = $nouvelUtilisateur->getRoleUtilisateur();
+        }
         echo "Nouvel utilisateur créé : " . $courriel;
     }
 }
 
-function addUtilisateur($infosUtilisateur) {
+function addUtilisateur($infosUtilisateur)
+{
     $pdo = new PDO('mysql:host=localhost;dbname=dwalabo;charset=utf8', 'root', '');
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
@@ -115,8 +125,9 @@ function addUtilisateur($infosUtilisateur) {
         'token' => ''
     ]);
 
-    // Retourne l'utilisateur créé
-    return getUtilisateurParCourriel($infosUtilisateur['courriel']);
+    // Retourne l'utilisateur créé (via le manager)
+    $um = new UtilisateurManager();
+    return $um->getUtilisateurParCourriel($infosUtilisateur['courriel']);
 }
 
 

@@ -3,31 +3,39 @@ require_once("model/Manager.php");
 require_once("model/Utilisateur.php");
 
 
-class UtilisateurManager extends Manager{
+class UtilisateurManager extends Manager
+{
 
-    function getUtilisateurParCourriel($courriel){
-            $db = $this->db_connect();
+    function getUtilisateurParCourriel($courriel)
+    {
+        $db = $this->db_connect();
 
-            $sql = "SELECT * from tbl_utilisateur WHERE courriel = :courriel";
+        $sql = "SELECT * from tbl_utilisateur WHERE courriel = :courriel";
 
-            $stmt = $db->prepare($sql);
+        $stmt = $db->prepare($sql);
 
-            $stmt->bindValue(':courriel', $courriel);
+        $stmt->bindValue(':courriel', $courriel);
 
-            $stmt->execute();      
-            
-            $data = $stmt->fetch();
+        $stmt->execute();
 
-            if ($data) {
-                $user = new Utilisateur($data);
-                return $user;
-            }
+        $data = $stmt->fetch();
 
-            return null;
+        // DEBUG: Afficher ce qu'on a trouvé
+        echo "<pre>DEBUG SQL: ";
+        print_r($data);
+        echo "</pre>";
 
+        if ($data) {
+            $user = new Utilisateur($data);
+            return $user;
         }
 
-    function verifAuthentification($courriel, $motPasse){
+        return null;
+
+    }
+
+    function verifAuthentification($courriel, $motPasse)
+    {
 
         $utilisateur = $this->getUtilisateurParCourriel($courriel);
 
@@ -47,9 +55,9 @@ class UtilisateurManager extends Manager{
         }
     }
 
-    
 
-    
+
+
 }
 
 
