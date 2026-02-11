@@ -1,0 +1,9 @@
+nav ul {
+    display:flex;
+    margin:20px 0; 
+}
+
+nav li {
+    width:25%;
+    margin-right:20px; 
+}

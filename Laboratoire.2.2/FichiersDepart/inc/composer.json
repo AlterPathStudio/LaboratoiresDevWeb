@@ -1,0 +1,8 @@
+{
+    "require": {
+        "google/apiclient": "^2.12"
+    },
+	"config": {
+		"process-timeout": 0
+	}
+}
