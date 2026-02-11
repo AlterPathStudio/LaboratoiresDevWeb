@@ -1,6 +1,5 @@
 <?php
 
-
 class Utilisateur{
     private $id;
     private $nom;
@@ -10,19 +9,13 @@ class Utilisateur{
     private $role_utilisateur;
 
     public function __construct($params = array()){
-  
         foreach($params as $k => $v){
-
             $methodName = "set_" . $k;
             if(method_exists($this, $methodName)) {
                 $this->$methodName($v);
             }   
         }
     }
-
-    
-
-
 
     /**
      * Get the value of mdp
@@ -45,7 +38,7 @@ class Utilisateur{
      *
      * @return  self
      */ 
-    public function setMdp($mdp)
+    public function set_mdp($mdp)
     {
         $this->mdp = $mdp;
 
@@ -65,7 +58,7 @@ class Utilisateur{
      *
      * @return  self
      */ 
-    public function setCourriel($courriel)
+    public function set_courriel($courriel)
     {
         $this->courriel = $courriel;
 
@@ -85,7 +78,7 @@ class Utilisateur{
      *
      * @return  self
      */ 
-    public function setPrenom($prenom)
+    public function set_prenom($prenom)
     {
         $this->prenom = $prenom;
 
@@ -105,7 +98,7 @@ class Utilisateur{
      *
      * @return  self
      */ 
-    public function setNom($nom)
+    public function set_nom($nom)
     {
         $this->nom = $nom;
 
@@ -125,7 +118,7 @@ class Utilisateur{
      *
      * @return  self
      */ 
-    public function setId($id)
+    public function set_id_utilisateur($id)
     {
         $this->id = $id;
 
@@ -145,24 +138,12 @@ class Utilisateur{
      *
      * @return  self
      */ 
-    public function setRole_utilisateur($role_utilisateur)
+    public function set_role_utilisateur($role_utilisateur)
     {
         $this->role_utilisateur = $role_utilisateur;
 
         return $this;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 ?>

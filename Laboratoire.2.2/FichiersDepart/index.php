@@ -53,9 +53,9 @@ if (isset($_REQUEST['action'])) {
     }
     // Si l'action demandé est le clic sur le bouton Authentifier du formulaire de connexion
     elseif ($_REQUEST['action'] == 'authentifier') {
-        if (isset($_REQUEST['courriel']) && isset($_REQUEST['motPasse'])) {
+        if (isset($_REQUEST['courriel'])) {
             require('controller/controllerUtilisateur.php');
-            authentifier($_REQUEST['courriel'], $_REQUEST['motPasse']);
+            authentifier($_REQUEST['courriel'], $_REQUEST['mdp']);
         } else {
             echo "Erreur, mot de passe ou courriel pas bon";
             echo '<a href="?action=connexion"> Retour à la page de connexion</a>';

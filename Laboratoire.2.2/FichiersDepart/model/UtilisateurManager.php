@@ -20,10 +20,6 @@ class UtilisateurManager extends Manager
 
         $data = $stmt->fetch();
 
-        // DEBUG: Afficher ce qu'on a trouvé
-        echo "<pre>DEBUG SQL: ";
-        print_r($data);
-        echo "</pre>";
 
         if ($data) {
             $user = new Utilisateur($data);
