@@ -1,0 +1,22 @@
+1) Le formulaire d'inscription envoie:
+- action=inscription
+- prenom, nom, courriel, mot_de_passe
+
+2) Dans index.php:
+- Si action=inscription et méthode GET: afficher le formulaire
+- Si action=inscription et méthode POST: appeler inscrireUtilisateur(...)
+
+3) Dans controllerUtilisateur.php (inscrireUtilisateur):
+- Vérifier si le courriel existe déjà
+- Préparer les infos utilisateur
+- Appeler addUtilisateur(...)
+- Si succès: afficher la connexion
+- Sinon: afficher une erreur
+
+4) Dans UtilisateurManager.php (addUtilisateur):
+- Faire le INSERT dans tbl_utilisateur
+- Hasher le mot de passe avec password_hash avant d'insérer
+
+5) Test rapide:
+- Créer un nouvel utilisateur avec le formulaire
+- Vérifier qu'il apparaît dans tbl_utilisateur

@@ -10,6 +10,44 @@ function getFormConnexion()
     require_once('view/loginView.php');
 }
 
+function getFormInscription()
+{
+    require_once('view/inscriptionView.php');
+}
+
+function inscrireUtilisateur($prenom, $nom, $courriel, $motDePasse)
+{
+    
+    $utilisateurManager = new UtilisateurManager();
+
+    $utilisateurExistant = $utilisateurManager->getUtilisateurParCourriel($courriel);
+    if ($utilisateurExistant !== null) {
+        echo "Ce courriel est déjà utilisé.";
+        getFormInscription();
+        return;
+    }
+
+    $infosUtilisateur = [
+        'prenom' => trim($prenom),
+        'nom' => trim($nom),
+        'courriel' => trim($courriel),
+        'mdp' => $motDePasse,
+        'est_actif' => 0,
+        'role' => 0,
+        'type' => 0
+    ];
+
+    $utilisateur = addUtilisateur($infosUtilisateur);
+
+    if ($utilisateur !== null) {
+        echo "Inscription réussie. Vous pouvez maintenant vous connecter.";
+        getFormConnexion();
+    } else {
+        echo "Erreur lors de l'inscription.";
+        getFormInscription();
+    }
+}
+
 function autoLogin(){
     // Vérifier si le cookie autologin existe
     if (isset($_COOKIE['autologin'])) {
@@ -36,6 +74,7 @@ function autoLogin(){
 
 function authentifier($courriel, $mdp)
 {
+    
     $utilisateurManager = new UtilisateurManager();
     $utilisateur = $utilisateurManager->verifAuthentification($courriel, $mdp);
 
@@ -164,8 +203,9 @@ function authentificationGoogle($credential)
 
 function addUtilisateur($infosUtilisateur)
 {
-   $utilisateurManager = new UtilisateurManager();
+    $utilisateurManager = new UtilisateurManager();
     $utilisateur = $utilisateurManager->addUtilisateur($infosUtilisateur);
+    return $utilisateur;
 }
 
 

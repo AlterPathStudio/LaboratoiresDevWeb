@@ -2,9 +2,7 @@
 
 <?php // La variable $title servira pour la balise <title> dans le fichier template.php ?>
 <?php $title = 'Accueil'; ?>
-
-<?php //Démarre la tamporisation du contenu ?>
-<?php ob_start(); ?>
+<?php require('template.php'); ?>
 <h1>Démonstration du modèle MVC</h1>
 <p>Liste des produits sur la page d'accueil</p>
 
@@ -18,8 +16,3 @@ foreach ($produits as $produit){ ?>
         <p><a href="index.php?action=produit&amp;id=<?= $produit->get_id_produit() ?>">Voir les détails</a></p>        
     </div>
 <?php } ?>
-
-<?php // Termine la tamporisation et place le contenu dans $content ?>
-<?php $content = ob_get_clean(); ?>
-
-<?php require('template.php'); ?>

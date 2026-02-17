@@ -1,9 +1,7 @@
 <?php $title = 'Produits'?>
+<?php require('template.php'); ?>
 
 <?php
-
-    ob_start();
-
     // Déclaration de la variable
     $titreH1 = "Les produits";
 
@@ -23,7 +21,3 @@
         <hr>
     </div>
 <?php } ?>
-
-<?php $content = ob_get_clean(); ?>
-
-<?php require('template.php'); ?>

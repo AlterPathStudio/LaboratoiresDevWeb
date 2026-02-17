@@ -27,7 +27,6 @@ echo '</pre>----------------------------<br>';
             <a href="index.php?action=connexion">Se connecter</a>
         </div>
     <?php } ?>
-
     <nav>
         <ul>
             <li><a href=".">Accueil</a></li>
@@ -38,11 +37,8 @@ echo '</pre>----------------------------<br>';
                 <li><a href="index.php?action=deconnexion">Se déconnecter</a></li>
             <?php } else { ?>
                 <li><a href="index.php?action=connexion">Se connecter</a></li>
+                <li><a href="index.php?action=inscription">S'inscrire</a></li>
             <?php } ?>
 
         </ul>
     </nav>
-    <?= $content ?>
-</body>
-
-</html>

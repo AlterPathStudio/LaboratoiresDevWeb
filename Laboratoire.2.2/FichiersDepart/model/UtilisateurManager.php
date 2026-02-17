@@ -53,10 +53,9 @@ class UtilisateurManager extends Manager
 
     function addUtilisateur($infosUtilisateur)
 {
-    $pdo = new PDO('mysql:host=db;dbname=dwalabo;charset=utf8', 'root', 'f4q2DG2obVd3I');
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $db = $this->db_connect();
 
-    $stmt = $pdo->prepare("
+    $stmt = $db->prepare(" 
         INSERT INTO tbl_utilisateur
         (nom, prenom, courriel, mdp, est_actif, role_utilisateur, type_utilisateur, token)
         VALUES

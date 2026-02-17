@@ -1,5 +1,5 @@
 <?php $title = 'Se connecter'; ?>
-<?php ob_start(); ?>
+<?php require('template.php'); ?>
 
 <?php
 
@@ -32,6 +32,3 @@
 ?>" data-client_id="968412325146-5ipedunslal15l7q1tfl4itr21mohi3h.apps.googleusercontent.com"></div>
 <!-- g_id_signin places the button on a page and supports customization -->
 <div class="g_id_signin"></div>
-
-<?php $content = ob_get_clean(); ?>
-<?php require('template.php'); ?>

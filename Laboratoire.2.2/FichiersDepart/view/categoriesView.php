@@ -1,6 +1,5 @@
 <?php $title = 'Categories'?>
-
-<?php ob_start(); ?>
+<?php require('template.php'); ?>
 <h1>Les catégories</h1>
 
 
@@ -15,7 +14,3 @@
         <hr>
     </div>
 <?php } ?>
-
-<?php $content = ob_get_clean(); ?>
-
-<?php require('template.php'); ?>

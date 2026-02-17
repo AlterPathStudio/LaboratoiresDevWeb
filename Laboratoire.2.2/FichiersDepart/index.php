@@ -55,6 +55,26 @@ if (isset($_REQUEST['action'])) {
         require_once('controller/controllerUtilisateur.php');
         getFormConnexion();
     }
+    // Si l'action demandé est le clic sur le bouton Inscription
+    elseif ($_REQUEST['action'] == 'inscription') {
+        require_once('controller/controllerUtilisateur.php');
+        if (
+            $_SERVER['REQUEST_METHOD'] === 'POST' &&
+            isset($_REQUEST['prenom']) &&
+            isset($_REQUEST['nom']) &&
+            isset($_REQUEST['courriel']) &&
+            isset($_REQUEST['mot_de_passe'])
+        ) {
+            inscrireUtilisateur(
+                $_REQUEST['prenom'],
+                $_REQUEST['nom'],
+                $_REQUEST['courriel'],
+                $_REQUEST['mot_de_passe']
+            );
+        } else {
+            getFormInscription();
+        }
+    }
     // Si l'action demandé est le clic sur le bouton Authentifier du formulaire de connexion
     elseif ($_REQUEST['action'] == 'authentifier') {
         if (isset($_REQUEST['courriel']) && isset($_REQUEST['motPasse'])) {
