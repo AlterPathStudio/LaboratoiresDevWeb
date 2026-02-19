@@ -59,6 +59,8 @@ if (isset($_REQUEST['action'])) {
     elseif ($_REQUEST['action'] == 'inscription') {
         require_once('controller/controllerUtilisateur.php');
         if (
+
+        //On valide les paramètres reçus pour l'inscription dans index.php
             $_SERVER['REQUEST_METHOD'] === 'POST' &&
             isset($_REQUEST['prenom']) &&
             isset($_REQUEST['nom']) &&
@@ -79,7 +81,8 @@ if (isset($_REQUEST['action'])) {
     elseif ($_REQUEST['action'] == 'authentifier') {
         if (isset($_REQUEST['courriel']) && isset($_REQUEST['motPasse'])) {
             require_once('controller/controllerUtilisateur.php');
-            authentifier($_REQUEST['courriel'], $_REQUEST['motPasse']);
+            $souvenirMoi = isset($_REQUEST['souvenirMoi']);
+            authentifier($_REQUEST['courriel'], $_REQUEST['motPasse'], $souvenirMoi);
         } else {
             echo "Erreur, mot de passe ou courriel pas bon";
             echo '<a href="?action=connexion"> Retour à la page de connexion</a>';
@@ -98,7 +101,14 @@ if (isset($_REQUEST['action'])) {
     elseif ($_REQUEST['action'] == 'sessionFermer'){
         require_once('controller/controllerUtilisateur.php');
         fermer_session();
-
+    }
+    elseif ($_REQUEST['action'] == 'validation'){
+        if (isset($_REQUEST['courriel']) && isset($_REQUEST['token'])) {
+            require_once('controller/controllerUtilisateur.php');
+            checkTokenInscription($_REQUEST['courriel'], $_REQUEST['token']);
+        } else {
+            echo "Lien de validation invalide.";
+        }
     }
 }
 // Si pas de paramètre charge l'accueil

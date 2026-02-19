@@ -32,23 +32,29 @@ class UtilisateurManager extends Manager
 
     function verifAuthentification($courriel, $motPasse)
     {
+        $db = $this->db_connect();
 
-        $utilisateur = $this->getUtilisateurParCourriel($courriel);
+        $sql = "SELECT * FROM tbl_utilisateur WHERE courriel = :courriel AND est_actif = 1 LIMIT 1";
+        $stmt = $db->prepare($sql);
+        $stmt->bindValue(':courriel', $courriel);
+        $stmt->execute();
+        $data = $stmt->fetch();
 
-        if ($utilisateur) {     //Vérifie dans la base de données si l'utilisateur existe
-            // Utilisateur trouvé, vérifier le mot de passe
-            $hash = $utilisateur->get_mot_passe();
-            if ($hash !== null && password_verify($motPasse, $hash)) {
-                // Mot de passe correct
-                return $utilisateur;
-            } else {
-                // Mot de passe incorrect
-                return null;
-            }
-        } else {
-            // Utilisateur non trouvé
+        if (!$data) {
             return null;
         }
+
+        $utilisateur = new Utilisateur($data);
+
+        // Utilisateur actif trouvé, vérifier le mot de passe
+        $hash = $utilisateur->get_mot_passe();
+        if ($hash !== null && password_verify($motPasse, $hash)) {
+            // Mot de passe correct
+            return $utilisateur;
+        }
+
+        // Mot de passe incorrect
+        return null;
     }
 
     function addUtilisateur($infosUtilisateur)
@@ -62,8 +68,17 @@ class UtilisateurManager extends Manager
         (:nom, :prenom, :courriel, :mdp, :est_actif, :role_utilisateur, :type_utilisateur, :token)
     ");
 
-    // Pour Google, mdp = vide ou un hash aléatoire
-    $mdp = password_hash(bin2hex(random_bytes(8)), PASSWORD_DEFAULT);
+    // Pour l'inscription locale, on hash le mdp soumis; pour Google, hash aléatoire
+    if (isset($infosUtilisateur['mdp']) && $infosUtilisateur['mdp'] !== '') {
+        $mdp = password_hash($infosUtilisateur['mdp'], PASSWORD_DEFAULT);
+    } else {
+        $mdp = password_hash(bin2hex(random_bytes(8)), PASSWORD_DEFAULT);
+    }
+
+    $token = '';
+    if (isset($infosUtilisateur['token']) && $infosUtilisateur['token'] !== '') {
+        $token = password_hash($infosUtilisateur['token'], PASSWORD_DEFAULT);
+    }
 
     $stmt->execute([
         'nom' => $infosUtilisateur['nom'],
@@ -73,13 +88,62 @@ class UtilisateurManager extends Manager
         'est_actif' => $infosUtilisateur['est_actif'],
         'role_utilisateur' => $infosUtilisateur['role'],
         'type_utilisateur' => $infosUtilisateur['type'],
-        'token' => ''
+        'token' => $token
     ]);
 
     // Retourne l'utilisateur créé (via le manager)
-    $um = new UtilisateurManager();
-    return $um->getUtilisateurParCourriel($infosUtilisateur['courriel']);
+    return $this->getUtilisateurParCourriel($infosUtilisateur['courriel']);
 }
+
+    function validerInscription($courriel, $tokenClair)
+    {
+        $db = $this->db_connect();
+
+        $sql = "SELECT * FROM tbl_utilisateur WHERE courriel = :courriel LIMIT 1";
+        $stmt = $db->prepare($sql);
+        $stmt->bindValue(':courriel', $courriel);
+        $stmt->execute();
+        $data = $stmt->fetch();
+
+        if (!$data) {
+            return false;
+        }
+
+        if ((int) $data['est_actif'] === 1) {
+            return true;
+        }
+
+        if (empty($data['token'])) {
+            return false;
+        }
+
+        if (!password_verify($tokenClair, $data['token'])) {
+            return false;
+        }
+
+        $sqlUpdate = "UPDATE tbl_utilisateur SET est_actif = 1, token = '' WHERE id_utilisateur = :id_utilisateur";
+        $stmtUpdate = $db->prepare($sqlUpdate);
+        $stmtUpdate->bindValue(':id_utilisateur', $data['id_utilisateur']);
+
+        return $stmtUpdate->execute();
+    }
+
+    function checkTokenInscription($courriel, $tokenClair)
+    {
+        $db = $this->db_connect();
+
+        $sql = "SELECT token FROM tbl_utilisateur WHERE courriel = :courriel AND est_actif = 0 LIMIT 1";
+        $stmt = $db->prepare($sql);
+        $stmt->bindValue(':courriel', $courriel);
+        $stmt->execute();
+        $data = $stmt->fetch();
+
+        if (!$data || empty($data['token'])) {
+            return false;
+        }
+
+        return password_verify($tokenClair, $data['token']);
+    }
 
     function addAutologin($id_utilisateur, $tokenHash)
     {

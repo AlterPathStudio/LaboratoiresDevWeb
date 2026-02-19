@@ -6,6 +6,7 @@ class Utilisateur{
     private $prenom;
     private $courriel;
     private $mdp;
+    private $est_actif;
     private $role_utilisateur;
 
     public function __construct($params = array()){
@@ -41,6 +42,26 @@ class Utilisateur{
     public function set_mdp($mdp)
     {
         $this->mdp = $mdp;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of est_actif
+     */
+    public function getEstActif()
+    {
+        return $this->est_actif;
+    }
+
+    /**
+     * Set the value of est_actif
+     *
+     * @return  self
+     */
+    public function set_est_actif($est_actif)
+    {
+        $this->est_actif = $est_actif;
 
         return $this;
     }
