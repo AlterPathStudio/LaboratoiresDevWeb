@@ -1,0 +1,15 @@
+RewriteEngine On
+
+# Ne pas faire la réécriture si le fichier demandé existe
+RewriteCond %{REQUEST_FILENAME} !-f
+
+# Ne pas faire la réécriture si le dossier demandé existe
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Si la partie après l'hôte de l'URL demandé contient des caractères, alors remplacer l'URL
+# par "index.php?action=$1" (sans les guillemets) --> $1 sera remplacé par le contenu des ( )
+# Ex: http://localhost/produits sera remplacé par http://localhost/index.php?action=produits
+RewriteRule ^(\w*)$ index.php?action=$1 [QSA]
+
+# Ex: http://localhost/produit/1 sera remplacé par http://localhost/index.php?action=produit&id=1
+RewriteRule ^(\w*)/(\d*)$ index.php?action=$1&id=$2 [QSA]

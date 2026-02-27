@@ -1,0 +1,30 @@
+# Étapes - Implémentation "Se souvenir de moi"
+
+## Étape 1: Modification de UtilisateurManager.php
+- Ajout d'une nouvelle méthode `addAutologin()`
+- Cette méthode insère un enregistrement dans la table `tbl_autologin`
+- Elle reçoit l'ID utilisateur et le token hachée en paramètres
+- Définit automatiquement la date d'expiration à 30 jours
+
+## Étape 2: Import de Util.php dans le controller
+- Ajout de `require('Util.php');` au début du fichier `controllerUtilisateur.php`
+- Cela permet d'utiliser la méthode `getToken()` pour générer des tokens aléatoires
+
+## Étape 3: Modification de la fonction authentifier()
+- Vérification si la case "Se souvenir de moi" est cochée: `isset($_POST['souvenirMoi'])`
+- Génération d'un token aléatoire de 32 caractères en texte clair avec `getToken(32)`
+- Hachage du token avec `password_hash()` pour la base de données
+- Création d'un cookie JSON contenant:
+  - Le courriel de l'utilisateur
+  - Le token en texte clair
+- Définition de l'expiration du cookie à 30 jours (en secondes)
+- Appel de `addAutologin()` pour enregistrer le token hachée en base de données
+
+## Résumé du flux:
+1. Utilisateur se connecte et coche "Se souvenir de moi"
+2. Authentification réussie ✓
+3. Token aléatoire généré (version clair)
+4. Token hachée créée
+5. Cookie créé avec courriel + token clair (JSON)
+6. Token hachée enregistré en BD
+7. Lors de la prochaine visite, le token du cookie peut être vérifié contre celui en BD

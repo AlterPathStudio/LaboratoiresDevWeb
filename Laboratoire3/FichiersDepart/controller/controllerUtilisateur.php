@@ -1,0 +1,354 @@
+<?php
+use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\PHPMailer;
+
+require('model/UtilisateurManager.php');
+require('Util.php');
+
+$autoloadCandidates = [
+    __DIR__ . '/../../inc/vendor/autoload.php',
+    __DIR__ . '/../inc/vendor/autoload.php'
+];
+
+foreach ($autoloadCandidates as $autoloadPath) {
+    if (file_exists($autoloadPath)) {
+        require_once($autoloadPath);
+        break;
+    }
+}
+
+
+
+
+function getFormConnexion()
+{
+    require_once('view/loginView.php');
+}
+
+function getFormInscription()
+{
+    require_once('view/inscriptionView.php');
+}
+
+function inscrireUtilisateur($prenom, $nom, $courriel, $motDePasse)
+{
+    
+    $utilisateurManager = new UtilisateurManager();
+
+    $utilisateurExistant = $utilisateurManager->getUtilisateurParCourriel($courriel);
+    if ($utilisateurExistant !== null) {
+        echo "Ce courriel est déjà utilisé.";
+        getFormInscription();
+        return;
+    }
+
+    $util = new Util();
+    $tokenClair = $util->getToken(32);
+
+    $infosUtilisateur = [
+        'prenom' => trim($prenom),
+        'nom' => trim($nom),
+        'courriel' => trim($courriel),
+        'mdp' => $motDePasse,
+        'est_actif' => 0,
+        'role' => 0,
+        'type' => 0,
+        'token' => $tokenClair
+    ];
+
+    $utilisateur = addUtilisateur($infosUtilisateur);
+
+    if ($utilisateur !== null) {
+        $courrielEnvoye = envoyerCourrielValidation($utilisateur, $tokenClair);
+
+        echo "Inscription réussie.";
+        if ($courrielEnvoye) {
+            echo " Un courriel de validation a été envoyé. Ouvrez MailHog et cliquez sur le lien reçu.";
+        } else {
+            echo "<br/>Erreur d'envoi du courriel de validation. Vérifiez que MailHog est démarré (SMTP: localhost:1025).";
+        }
+        getFormConnexion();
+    } else {
+        echo "Erreur lors de l'inscription.";
+        getFormInscription();
+    }
+}
+
+function envoyerCourrielValidation($utilisateur, $tokenClair)
+{
+    $courriel = $utilisateur->getCourriel();
+    $urlValidation = getUrlValidation($courriel, $tokenClair);
+
+    $sujet = "Validation de votre inscription";
+    $message = "
+        <html>
+        <body>
+            <h2>Confirmation d'inscription</h2>
+            <p>Bonjour " . htmlspecialchars($utilisateur->getPrenom()) . " " . htmlspecialchars($utilisateur->getNom()) . ",</p>
+            <p>Votre inscription est presque terminée.</p>
+            <p><strong>ID utilisateur :</strong> " . $utilisateur->getId() . "<br/>
+               <strong>Courriel :</strong> " . htmlspecialchars($courriel) . "</p>
+            <p>Veuillez cliquer sur ce lien pour valider votre compte :</p>
+            <p><a href='" . $urlValidation . "'>Valider mon inscription</a></p>
+        </body>
+        </html>
+    ";
+
+    if (!class_exists(PHPMailer::class)) {
+        return false;
+    }
+
+    try {
+        $smtpHostOptions = [];
+        $envSmtpHost = getenv('MAILHOG_HOST');
+        if ($envSmtpHost !== false && trim($envSmtpHost) !== '') {
+            $smtpHostOptions[] = trim($envSmtpHost);
+        }
+        $smtpHostOptions = array_merge($smtpHostOptions, ['localhost', '127.0.0.1', 'mailhog']);
+
+        foreach ($smtpHostOptions as $smtpHost) {
+            try {
+                $mail = new PHPMailer(true);
+                $mail->isSMTP();
+                $mail->Host = $smtpHost;
+                $mail->Port = 1025;
+                $mail->SMTPAuth = false;
+                $mail->SMTPSecure = false;
+                $mail->SMTPAutoTLS = false;
+                $mail->CharSet = 'UTF-8';
+                $mail->Timeout = 5;
+
+                $mail->setFrom('no-reply@laboratoire2.2.local', 'Laboratoire 2.2');
+                $mail->addAddress($courriel, $utilisateur->getPrenom() . ' ' . $utilisateur->getNom());
+                $mail->Subject = $sujet;
+                $mail->isHTML(true);
+                $mail->Body = $message;
+                $mail->AltBody = "Bonjour " . $utilisateur->getPrenom() . " " . $utilisateur->getNom() . ",\n\n"
+                    . "Veuillez valider votre compte avec ce lien : " . $urlValidation;
+
+                return $mail->send();
+            } catch (Exception $e) {
+                // Essayer l'hôte SMTP suivant
+            }
+        }
+
+        return false;
+    } catch (Exception $e) {
+        return false;
+    } catch (\Throwable $e) {
+        return false;
+    }
+}
+
+function getUrlValidation($courriel, $tokenClair)
+{
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'];
+    $scriptPath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+
+    return $scheme . '://' . $host . $scriptPath . '/index.php?action=validation&courriel=' . urlencode($courriel) . '&token=' . urlencode($tokenClair);
+}
+
+function validerInscription($courriel, $token)
+{
+    $utilisateurManager = new UtilisateurManager();
+    $estValide = $utilisateurManager->validerInscription($courriel, $token);
+
+    if ($estValide) {
+        echo "Inscription validée avec succès. Vous pouvez maintenant vous connecter.";
+    } else {
+        echo "Lien de validation invalide ou expiré.";
+    }
+
+    getFormConnexion();
+}
+
+function autoLogin()
+{
+    if (!isset($_COOKIE['autologin'])) {
+        return;
+    }
+
+    $cookieValues = json_decode($_COOKIE['autologin'], true);
+    if (!$cookieValues || !isset($cookieValues['courriel']) || !isset($cookieValues['token'])) {
+        return;
+    }
+
+    $courriel = trim($cookieValues['courriel']);
+    $tokenClair = $cookieValues['token'];
+
+    if ($courriel === '' || $tokenClair === '') {
+        return;
+    }
+
+    $utilisateurManager = new UtilisateurManager();
+    $utilisateur = $utilisateurManager->verifyAutologin($courriel, $tokenClair);
+
+    if ($utilisateur !== null) {
+        // Autologin valide - réactiver la session
+        $_SESSION['courriel'] = $utilisateur->getCourriel();
+        $_SESSION['role'] = $utilisateur->getRoleUtilisateur();
+    }
+}
+
+
+function authentifier($courriel, $mdp, $souvenirMoi = false)
+{
+    
+    $utilisateurManager = new UtilisateurManager();
+    $utilisateur = $utilisateurManager->verifAuthentification($courriel, $mdp);
+
+    if ($utilisateur !== null) {
+        // Authentification réussie
+        // Ajouter les informations dans $_SESSION
+        $_SESSION['courriel'] = $utilisateur->getCourriel();
+        $_SESSION['role'] = $utilisateur->getRoleUtilisateur();
+
+        // Vérifier si l'utilisateur a coché "Se souvenir de moi"
+        if ($souvenirMoi) {
+            // Générer un token aléatoire entre 16 et 32 caractères
+            $util = new Util();
+            $tokenClair = $util->getToken(32); // Token de 32 caractères en texte clair
+            
+            // Hacher le token pour l'enregistrer en BD
+            $tokenHash = password_hash($tokenClair, PASSWORD_DEFAULT);
+            
+            // Créer le cookie avec le token en clair et le courriel
+            $expirationCookie = time() + (30 * 24 * 60 * 60); // 30 jours en secondes
+            $cookieValues = array(
+                'courriel' => $utilisateur->getCourriel(),
+                'token' => $tokenClair
+            );
+            // Enregistrer le cookie en
+            setcookie('autologin', json_encode($cookieValues), $expirationCookie, '/');
+            
+            // Ajouter l'enregistrement autologin avec le token hachée
+            $utilisateurManager->addAutologin($utilisateur->getId(), $tokenHash);
+        }
+
+        // Charger l'accueil et afficher la liste des produits
+        require('controller/controllerAccueil.php');
+        listProduits();
+    } else {
+        // Authentification échouée
+        // Afficher le formulaire de connexion
+        getFormConnexion();
+    }
+}
+
+function deconnexion()
+{
+
+    // Supprimer le cookie autologin
+    setcookie("autologin", "", time() - 3600, '/');
+
+    $_SESSION = array();
+    session_destroy();
+
+    // Charger l'accueil et afficher la liste des produits
+    require('controller/controllerAccueil.php');
+    listProduits();
+}
+
+
+function fermer_session()
+{
+    $_SESSION = array();
+    session_destroy();
+
+    // Charger l'accueil et afficher la liste des produits
+    require('controller/controllerAccueil.php');
+    listProduits();
+}
+
+function authentificationGoogle($credential)
+{
+    // Inclut la bibliothèque Google Client
+    foreach ($autoloadCandidates as $autoloadPath) {
+        if (file_exists($autoloadPath)) {
+            require_once($autoloadPath);
+            break;
+        }
+    }
+
+    // ID Google
+    $CLIENT_ID = "968412325146-5ipedunslal15l7q1tfl4itr21mohi3h.apps.googleusercontent.com";
+
+    // client Google
+    $client = new Google_Client(['client_id' => $CLIENT_ID]);
+
+    // Vérifie le token reçu
+    $payload = $client->verifyIdToken($credential);
+
+    if ($payload) {
+        // Récupère l'identifiant unique Google
+        $userid = $payload['sub'];
+
+        // Affiche le contenu de $payload pour vérifier les informations
+        echo "<pre>";
+        print_r($payload);
+        echo "</pre>";
+    } else {
+        echo "Token invalide !";
+    }
+
+    $courriel = $payload['email'];
+
+    // Utiliser le manager pour vérifier si l'utilisateur existe déjà
+    $um = new UtilisateurManager();
+    $utilisateur = $um->getUtilisateurParCourriel($courriel);
+
+    if ($utilisateur) {
+        $_SESSION['courriel'] = $utilisateur->getCourriel();
+        $_SESSION['mdp'] = $utilisateur->getMdp();
+        $_SESSION['role'] = $utilisateur->getRoleUtilisateur();
+        echo "Utilisateur existant connecté : " . $courriel;
+    } else {
+        // Si nouvel utilisateur, on les met dans la bd
+        $infosUtilisateur = [
+            'prenom' => $payload['given_name'],  // prénom
+            'nom' => $payload['family_name'],    // nom
+            'courriel' => $courriel,             // email
+            'est_actif' => 1,                    // actif
+            'role' => 0,                         // rôle normal
+            'type' => 1                          // type Google
+        ];
+
+        // Ajoute l'utilisateur à la BD
+        $nouvelUtilisateur = addUtilisateur($infosUtilisateur);
+
+        // Démarre la session pour le nouvel utilisateur
+        if ($nouvelUtilisateur) {
+            $_SESSION['courriel'] = $nouvelUtilisateur->getCourriel();
+            $_SESSION['role'] = $nouvelUtilisateur->getRoleUtilisateur();
+        }
+        echo "Nouvel utilisateur créé : " . $courriel;
+    }
+}
+
+function addUtilisateur($infosUtilisateur)
+{
+    $utilisateurManager = new UtilisateurManager();
+    $utilisateur = $utilisateurManager->addUtilisateur($infosUtilisateur);
+    return $utilisateur;
+}
+
+function checkTokenInscription($courriel, $token)
+{
+    $utilisateurManager = new UtilisateurManager();
+
+    $tokenValide = $utilisateurManager->checkTokenInscription($courriel, $token);
+
+    if ($tokenValide) {
+        $utilisateurManager->validerInscription($courriel, $token);
+        echo "Inscription validée avec succès. Vous pouvez maintenant vous connecter.";
+    } else {
+        echo "Lien de validation invalide ou expiré.";
+    }
+
+    getFormConnexion();
+}
+
+
+
+?>
