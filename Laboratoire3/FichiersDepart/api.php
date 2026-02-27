@@ -92,6 +92,8 @@
                             break;
                         }
 
+                        
+
                         if (!isset($infosProduitExistant['id_produit']) || $infosProduitExistant['id_produit'] === '') {
                             $champsFautifs[] = 'id_produit';
                         } elseif (filter_var($infosProduitExistant['id_produit'], FILTER_VALIDATE_INT) === false || (int)$infosProduitExistant['id_produit'] <= 0) {
