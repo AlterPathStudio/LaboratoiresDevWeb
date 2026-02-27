@@ -35,80 +35,131 @@
                         break;
                     
                     case 'POST':
-                        // Cas pour insérer en BD un nouveau produit
-                        echo "test post";
-                        if (
-                            isset($_REQUEST['nom']) &&
-                            isset($_REQUEST['description']) &&
-                            isset($_REQUEST['prix'])
-                        ) {
-                            require_once('model/ProduitManager.php');
-                            $produitManager = new ProduitManager();
-                            $nouveauProduit = $produitManager->addProduit(
-                                ($_REQUEST['nom']),
-                                ($_REQUEST['description']),
-                                ($_REQUEST['prix'])
-                            );
-                            if ($nouveauProduit !== null) {
-                                http_response_code(201);
-                                echo json_encode($nouveauProduit);
-                            } else {
-                                http_response_code(500);
-                                echo '{"ÉCHEC" : "Erreur lors de l\'insertion du produit."}';
-                            }
-                        } else {
-                            http_response_code(400);
-                            echo '{"ÉCHEC" : "Paramètres manquants pour l\'insertion du produit."}';
-                        }
-                        break; 
+                    // Cas pour insérer en BD un nouveau produit
+                    $infosNouveauProduit = json_decode(file_get_contents('php://input'), true);
+                    $champsFautifs = array();
+
+                    if (!is_array($infosNouveauProduit)) {
+                        http_response_code(400);
+                        echo '{"ÉCHEC" : "L\'ajout du produit a échoué. Le corps de la requête doit être un JSON valide."}';
+                        break;
+                    }
+
+                    if (!isset($infosNouveauProduit['produit']) || $infosNouveauProduit['produit'] === '') {
+                        $champsFautifs[] = 'produit';
+                    }
+
+                    if (!isset($infosNouveauProduit['id_categorie']) || $infosNouveauProduit['id_categorie'] === '') {
+                        $champsFautifs[] = 'id_categorie';
+                    }
+
+                    if (!isset($infosNouveauProduit['description']) || $infosNouveauProduit['description'] === '') {
+                        $champsFautifs[] = 'description';
+                    }
+
+                    if (!empty($champsFautifs)) {
+                        http_response_code(400);
+                        echo json_encode(array(
+                            'ÉCHEC' => "L'ajout du produit a échoué. Champ(s) fautif(s) : " . implode(', ', $champsFautifs) . '.'
+                        ), JSON_UNESCAPED_UNICODE);
+                        break;
+                    }
+
+                    require_once('controller/controllerProduit.php');
+                    $resultatAjout = addProduit(
+                        $infosNouveauProduit['produit'],
+                        $infosNouveauProduit['id_categorie'],
+                        $infosNouveauProduit['description']
+                    );
+
+                    if ($resultatAjout['success']) {
+                        http_response_code(200);
+                        echo json_encode(array('SUCCÈS' => $resultatAjout['message']), JSON_UNESCAPED_UNICODE);
+                    } else {
+                        http_response_code(400);
+                        echo json_encode(array('ÉCHEC' => $resultatAjout['message']), JSON_UNESCAPED_UNICODE);
+                    }
+                    break;
                 
                     case 'PUT':
                         // Cas pour mettre à jour un ou des renseignement(s) en BD sur un produit spécifique
-                        echo "test put";
-                        if (
-                            isset($_REQUEST['id']) &&
-                            isset($_REQUEST['nom']) &&
-                            isset($_REQUEST['description']) &&
-                            isset($_REQUEST['prix'])
-                        ) {
-                            require_once('model/ProduitManager.php');
-                            $produitManager = new ProduitManager();
-                            $produitMisAJour = $produitManager->updateProduit(
-                                ($_REQUEST['id']),
-                                ($_REQUEST['nom']),
-                                ($_REQUEST['description']),
-                                ($_REQUEST['prix'])
-                            );
-                            if ($produitMisAJour !== null) {
-                                echo json_encode($produitMisAJour);
-                            } else {
-                                http_response_code(500);
-                                echo '{"ÉCHEC" : "Erreur lors de la mise à jour du produit."}';
-                            }
+                        $infosProduitExistant = json_decode(file_get_contents('php://input'), true);
+                        $champsFautifs = array();
+
+                        if (!is_array($infosProduitExistant)) {
+                            http_response_code(400);
+                            echo '{"ÉCHEC" : "La modification du produit a échoué. Le corps de la requête doit être un JSON valide."}';
+                            break;
+                        }
+
+                        if (!isset($infosProduitExistant['id_produit']) || $infosProduitExistant['id_produit'] === '') {
+                            $champsFautifs[] = 'id_produit';
+                        } elseif (filter_var($infosProduitExistant['id_produit'], FILTER_VALIDATE_INT) === false || (int)$infosProduitExistant['id_produit'] <= 0) {
+                            $champsFautifs[] = 'id_produit (doit être un entier strictement positif)';
+                        }
+
+                        if (!isset($infosProduitExistant['produit']) || trim((string)$infosProduitExistant['produit']) === '') {
+                            $champsFautifs[] = 'produit';
+                        }
+
+                        if (!isset($infosProduitExistant['id_categorie']) || $infosProduitExistant['id_categorie'] === '') {
+                            $champsFautifs[] = 'id_categorie';
+                        } elseif (filter_var($infosProduitExistant['id_categorie'], FILTER_VALIDATE_INT) === false || (int)$infosProduitExistant['id_categorie'] <= 0) {
+                            $champsFautifs[] = 'id_categorie (doit être un entier strictement positif)';
+                        }
+
+                        if (!isset($infosProduitExistant['description']) || trim((string)$infosProduitExistant['description']) === '') {
+                            $champsFautifs[] = 'description';
+                        }
+
+                        if (!empty($champsFautifs)) {
+                            http_response_code(400);
+                            echo json_encode(array(
+                                'ÉCHEC' => "La modification du produit a échoué. Champ(s) fautif(s) : " . implode(', ', $champsFautifs) . '.'
+                            ), JSON_UNESCAPED_UNICODE);
+                            break;
+                        }
+
+                        require_once('controller/controllerProduit.php');
+                        $resultatModification = editProduit(
+                            (int)$infosProduitExistant['id_produit'],
+                            trim((string)$infosProduitExistant['produit']),
+                            (int)$infosProduitExistant['id_categorie'],
+                            trim((string)$infosProduitExistant['description'])
+                        );
+
+                        if ($resultatModification['success']) {
+                            http_response_code(200);
+                            echo json_encode(array('SUCCÈS' => $resultatModification['message']), JSON_UNESCAPED_UNICODE);
                         } else {
                             http_response_code(400);
-                            echo '{"ÉCHEC" : "Paramètres manquants pour la mise à jour du produit."}';
+                            echo json_encode(array('ÉCHEC' => $resultatModification['message']), JSON_UNESCAPED_UNICODE);
                         }
                         break;
                 
                     case 'DELETE':
-                        echo "test delete";
                         // Cas pour supprimer en BD un produit spécifique
-                        if (
-                            isset($_REQUEST['id'])
-                        ) {
-                            require_once('model/ProduitManager.php');
-                            $produitManager = new ProduitManager();
-                            $produitSupprime = $produitManager->deleteProduit($_REQUEST['id']);
-                            if ($produitSupprime) {
-                                echo '{"SUCCÈS" : "Produit supprimé avec succès."}';
-                            } else {
-                                http_response_code(500);
-                                echo '{"ÉCHEC" : "Erreur lors de la suppression du produit."}';
-                            }
+                        if (!isset($_REQUEST['id']) || $_REQUEST['id'] === '') {
+                            http_response_code(400);
+                            echo '{"ÉCHEC" : "La suppression du produit a échoué. Champ fautif : id."}';
+                            break;
+                        }
+
+                        if (filter_var($_REQUEST['id'], FILTER_VALIDATE_INT) === false || (int)$_REQUEST['id'] <= 0) {
+                            http_response_code(400);
+                            echo '{"ÉCHEC" : "La suppression du produit a échoué. Le champ id doit être un entier strictement positif."}';
+                            break;
+                        }
+
+                        require_once('controller/controllerProduit.php');
+                        $resultatSuppression = deleteProduit((int)$_REQUEST['id']);
+
+                        if ($resultatSuppression['success']) {
+                            http_response_code(200);
+                            echo json_encode(array('SUCCÈS' => $resultatSuppression['message']), JSON_UNESCAPED_UNICODE);
                         } else {
                             http_response_code(400);
-                            echo '{"ÉCHEC" : "Paramètre manquant pour la suppression du produit."}';
+                            echo json_encode(array('ÉCHEC' => $resultatSuppression['message']), JSON_UNESCAPED_UNICODE);
                         }
                         break;
                     

@@ -48,18 +48,49 @@ class ProduitManager extends Manager
 
     }
 
-    public function updateProduit($id_produit, $nom, $description, $prix)
+    public function categorieExiste($id_categorie)
     {
         $db = $this->db_connect();
-        $req = $db->prepare('UPDATE tbl_produit SET nom = :nom, description = :description, prix = :prix WHERE id_produit = :id_produit');
-        $req->execute(array(
-            ':id_produit' => $id_produit,
-            ':nom' => $nom,
-            ':description' => $description,
-            ':prix' => $prix
-        ));
+        $req = $db->prepare('SELECT COUNT(*) AS nb FROM tbl_categorie WHERE id_categorie = :id_categorie');
+        $req->execute(array(':id_categorie' => $id_categorie));
+        $resultat = $req->fetch();
 
-        return ($req->rowCount() > 0);
+        return isset($resultat['nb']) && ((int)$resultat['nb'] > 0);
+    }
+
+    public function addProduit($produit, $id_categorie, $description)
+    {
+        $db = $this->db_connect();
+        try {
+            $req = $db->prepare('INSERT INTO tbl_produit (produit, id_categorie, description) VALUES (:produit, :id_categorie, :description)');
+            $req->execute(array(
+                ':produit' => $produit,
+                ':id_categorie' => $id_categorie,
+                ':description' => $description
+            ));
+
+            return ($req->rowCount() > 0);
+        } catch (PDOException $e) {
+            return false;
+        }
+    }
+
+    public function editProduit($id_produit, $produit, $id_categorie, $description)
+    {
+        $db = $this->db_connect();
+        try {
+            $req = $db->prepare('UPDATE tbl_produit SET produit = :produit, id_categorie = :id_categorie, description = :description WHERE id_produit = :id_produit');
+            $req->execute(array(
+                ':id_produit' => $id_produit,
+                ':produit' => $produit,
+                ':id_categorie' => $id_categorie,
+                ':description' => $description
+            ));
+
+            return ($req->rowCount() > 0);
+        } catch (PDOException $e) {
+            return false;
+        }
     }
 
     public function deleteProduit($id_produit)
@@ -69,6 +100,16 @@ class ProduitManager extends Manager
         $req->execute(array(':id_produit' => $id_produit));
 
         return ($req->rowCount() > 0);
+    }
+
+    public function produitExiste($id_produit)
+    {
+        $db = $this->db_connect();
+        $req = $db->prepare('SELECT COUNT(*) AS nb FROM tbl_produit WHERE id_produit = :id_produit');
+        $req->execute(array(':id_produit' => $id_produit));
+        $resultat = $req->fetch();
+
+        return isset($resultat['nb']) && ((int)$resultat['nb'] > 0);
     }
 
 

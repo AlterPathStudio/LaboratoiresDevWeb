@@ -41,3 +41,88 @@ function listProduitsCategorie($id_categorie){
 
     require('view/produitsView.php');
 }
+
+function addProduit($nomProduit, $idCategorie, $description)
+{
+    $produitManager = new ProduitManager();
+
+    if (!$produitManager->categorieExiste($idCategorie)) {
+        return array(
+            'success' => false,
+            'message' => "L'ajout du produit a échoué. L'ID de la catégorie n'existe pas en BD."
+        );
+    }
+
+    $insertionReussie = $produitManager->addProduit($nomProduit, $idCategorie, $description);
+
+    if ($insertionReussie) {
+        return array(
+            'success' => true,
+            'message' => "L'ajout du produit a fonctionné."
+        );
+    }
+
+    return array(
+        'success' => false,
+        'message' => "L'ajout du produit a échoué lors de l'insertion en BD."
+    );
+}
+
+function deleteProduit($idProduit)
+{
+    $produitManager = new ProduitManager();
+
+    if (!$produitManager->produitExiste($idProduit)) {
+        return array(
+            'success' => false,
+            'message' => "La suppression du produit a échoué. Le produit n'existe pas."
+        );
+    }
+
+    $produitSupprime = $produitManager->deleteProduit($idProduit);
+
+    if ($produitSupprime) {
+        return array(
+            'success' => true,
+            'message' => "La suppression du produit a fonctionné."
+        );
+    }
+
+    return array(
+        'success' => false,
+        'message' => "La suppression du produit a échoué lors de la suppression en BD."
+    );
+}
+
+function editProduit($idProduit, $nomProduit, $idCategorie, $description)
+{
+    $produitManager = new ProduitManager();
+
+    if (!$produitManager->produitExiste($idProduit)) {
+        return array(
+            'success' => false,
+            'message' => "La modification du produit a échoué. L'ID du produit n'existe pas en BD."
+        );
+    }
+
+    if (!$produitManager->categorieExiste($idCategorie)) {
+        return array(
+            'success' => false,
+            'message' => "La modification du produit a échoué. L'ID de la catégorie n'existe pas en BD."
+        );
+    }
+
+    $modificationReussie = $produitManager->editProduit($idProduit, $nomProduit, $idCategorie, $description);
+
+    if ($modificationReussie) {
+        return array(
+            'success' => true,
+            'message' => "La modification du produit a fonctionné."
+        );
+    }
+
+    return array(
+        'success' => false,
+        'message' => "La modification du produit a échoué lors de la mise à jour en BD."
+    );
+}
