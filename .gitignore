@@ -142,4 +142,9 @@ vite.config.ts.timestamp-*
 **/vendor/
 
 #Postman
-Laboratoire3/FichiersDepart/Postman.exe
+Laboratoire4.1/FichiersDepart/Postman.exe
+
+# Postman executables and temp files
+*.exe
+# Postman App data if accidentally tracked
+Postman/
